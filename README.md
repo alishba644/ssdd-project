@@ -1,3 +1,4 @@
+
 SSDD Project – Secure System for Detection and Defense
 
 Project Overview
@@ -126,3 +127,4 @@ Qurat Ul Ain – Repository Collaboration & Integration
 - Assisted in adversarial testing implementation
 - Contributed to attack-related functionality and testing
 ence in secure software development, vulnerability analysis, cybersecurity testing, and collaborative project management. The integration of SAST, DAST, and adversarial attack simulation demonstrates the importance of proactive security testing in modern software systems.
+Contributor:Aman Kaleem
