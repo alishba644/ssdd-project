@@ -1,54 +1,98 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import joblib
-from sklearn.datasets import load_digits
+import os
+
 from attacks.fgsm import add_noise
 from detection.detector import detect_attack
 from security.validation import validate_input
-import os
+from sklearn.datasets import load_digits
 
 app = Flask(__name__)
 
-# Load model safely
-if not os.path.exists("model.pkl"):
-    print("Error: model.pkl not found. Train the model first.")
-    exit()
+# -----------------------------
+# Load ML Model Safely
+# -----------------------------
+MODEL_PATH = "model.pkl"
 
-model = joblib.load("model.pkl")
+if os.path.exists(MODEL_PATH):
+    model = joblib.load(MODEL_PATH)
+else:
+    model = None
+    print("⚠ Warning: model.pkl not found (ML module disabled)")
 
 
+# -----------------------------
+# HOME ROUTE
+# -----------------------------
 @app.route("/")
 def home():
     return jsonify({
-        "Message": "SSDD Project Running Successfully",
-        "Status": "Secure Detection System Active"
+        "project": "SSDD - SAST DAST ML Security System",
+        "status": "Running Successfully",
+        "message": "System Active - Ready for Attack Detection Demo"
     })
 
 
-@app.route("/test")
+# -----------------------------
+# SIMULATION TEST (DAST + FGSM)
+# -----------------------------
+@app.route("/test", methods=["GET"])
 def test_attack():
 
-    # Load sample data
     data = load_digits()
     sample = data.data[0]
 
-    # Validate input
     if not validate_input(sample):
         return jsonify({
-            "Error": "Invalid Input"
+            "status": "failed",
+            "error": "Invalid input detected"
         })
 
-    # Apply attack
-    attacked = add_noise(sample)
-
-    # Detect attack
-    result = detect_attack(attacked)
+    attacked_sample = add_noise(sample)
+    result = detect_attack(attacked_sample)
 
     return jsonify({
-        "Attack Applied": "FGSM Noise",
-        "Detection Result": str(result),
-        "Input": "Sample Digit Data"
+        "mode": "DAST Simulation",
+        "attack_type": "FGSM Noise",
+        "result": str(result),
+        "description": "Attack simulated on sample dataset"
     })
 
 
+# -----------------------------
+# LIVE INPUT DETECTION (FOR VIVA)
+# -----------------------------
+@app.route("/predict", methods=["POST"])
+def predict():
+
+    data = request.get_json() or request.form
+    input_data = data.get("input")
+
+    if not input_data:
+        return jsonify({
+            "status": "error",
+            "message": "No input provided"
+        })
+
+    # Validate input (SAST-like check)
+    if not validate_input(input_data):
+        return jsonify({
+            "status": "blocked",
+            "result": "Malicious Input Detected (SAST Validation)"
+        })
+
+    # ML / Detection Engine
+    result = detect_attack(input_data)
+
+    return jsonify({
+        "mode": "Live Detection",
+        "input": input_data,
+        "result": str(result)
+    })
+
+
+# -----------------------------
+# RUN SERVER
+# -----------------------------
 if __name__ == "__main__":
     app.run(debug=True)
